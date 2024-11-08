@@ -1,11 +1,20 @@
 #ifndef _STDES_H
 #define _STDES_H
+#include <stdint.h>
+#define BUFFER_SIZE 4096
 
-struct _ES_FICHIER;
+struct _ES_FICHIER{
+    void * buffer;
+    size_t buffer_size;
+    char mode;
+    int fd;
+    size_t curseur;
+    size_t available_read;
+};
 typedef struct _ES_FICHIER FICHIER;
 
-extern FICHIER *stdout;
-extern FICHIER *stderr;
+extern FICHIER *my_stdout;
+extern FICHIER *my_stderr;
 
 /* mode: 'L' = lecture, 'E' = écriture */
 FICHIER *ouvrir(const char *nom, char mode);
