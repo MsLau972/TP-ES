@@ -1,7 +1,7 @@
 #ifndef _STDES_H
 #define _STDES_H
 #include <stdint.h>
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 1000
 
 struct _ES_FICHIER{
     void * buffer;
@@ -9,7 +9,7 @@ struct _ES_FICHIER{
     char mode;
     int fd;
     size_t curseur;
-    size_t available_read;
+    size_t available_read;  // données disponibles en lecture dans le buffer
 };
 typedef struct _ES_FICHIER FICHIER;
 

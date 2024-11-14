@@ -7,6 +7,12 @@
 
 #include "stdes.h"
 
+/**
+ *  ouvrir - ouvre un fichier dont le nom et le mode d'ouverture sont passés en paramètre
+ *  Paramètres: - nom le nom du fichier
+ *              - mode le mode d'ouverture du fichier
+ *  Valeur de retour: un pointeur sur un objet de type FICHIER, NULL si le fichier n'a pas pu être ouvert
+*/
 FICHIER *ouvrir(const char *nom, char mode){
     int flags;
     if (mode =='E'){
@@ -17,35 +23,59 @@ FICHIER *ouvrir(const char *nom, char mode){
     else{
         return NULL;
     }
+
     int fd=open(nom, flags, mode);
     if(fd<0){
+        fprintf(stderr, "Erreur: Fichier introuvable");
         return NULL;
     }
+
     FICHIER* fichier = (FICHIER*)(malloc(sizeof(FICHIER)));
-    void * buffer = malloc(BUFFER_SIZE);
+    void * buffer = malloc(sizeof(char *) * BUFFER_SIZE);
     fichier->buffer=buffer;
     fichier->buffer_size=BUFFER_SIZE;
     fichier->mode=mode;
     fichier->fd=fd;
     fichier->curseur=0;
-    fichier->available_read=BUFFER_SIZE;
+    fichier->available_read=0; // buffer vide au début, donc rien ne peut être lu
 
     return fichier;
 }
 
+
+/**
+ *  fermer - ferme le fichier pointé par f
+ *  Paramètres: f un objet de type FICHIER
+ *  Valeur de retour: Retourne 0 si la fermeture a réussi, -1 si f n'existe pas et -2 si la fermeture du fichier a échoué
+*/
 int fermer(FICHIER*f){
     if (f==NULL){
+        fprintf(stderr, "Erreur: La structure f n'existe pas");
         return -1;
     }
+
+    // flush ici: le buffer peut ne pas être vide
+
     int c=close(f->fd);
     if(c<0){
+        fprintf(stderr, "Erreur: Impossible de fermer le fichier");
         return -2;
     }
+
     free(f->buffer);
     free(f);
     return 0;
 }
 
+
+/**
+ *  lire - lit des éléments depuis le fichier pointé par f et les stocke dans le buffer utilisateur
+ *  Paramètres: - p le buffer utilisateur
+ *              - taille la taille d'un élement
+ *              - nbelem le nombre d'éléments à lire
+ *              - f un objet de type FICHIER
+ *  Valeur de retour: TODO
+*/
 int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
     if(f==NULL){
         return -1;
@@ -62,6 +92,9 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
     }
     int reste = nbelem * taille;
     int total_lecture=0;
+    
+    // TODO: refaire: l'objectif est d'appeler read() uniquement en cas de besoin
+
     while(reste){
         //remplir le buffer
         if(reste>BUFFER_SIZE){ //cas où le buffer est entièrement rempli
@@ -86,6 +119,15 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
     return total_lecture/taille;
 }
 
+
+/**
+ *  ecrire - écrit des éléments stockés dans le buffer utilisateur dans le fichier pointé par f
+ *  Paramètres: - p le buffer utilisateur
+ *              - taille la taille d'un élement
+ *              - nbelem le nombre d'éléments à lire
+ *              - f un objet de type FICHIER
+ *  Valeur de retour: TODO
+*/
 int ecrire(const void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
     if(f==NULL){
         return -1;
@@ -120,8 +162,19 @@ int ecrire(const void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
     }
     return total_ecriture/taille;
 }
+
+
+/**
+    vider - écrit les données du buffer dans le fichier ouvert en écriture
+        Paramètres: f un pointeur vers une structure FICHIER
+        Valeur de retour: Retourne 0 si la fonction réussit, -1 sinon
+ */
 int vider(FICHIER *f){
-    write(f->fd, f->buffer, f->curseur);
-    f->curseur=0;
-    return 0;
+    if(f->mode == 'E'){
+        write(f->fd, f->buffer, f->curseur);
+        f->curseur=0;
+        return 0;
+    }
+
+    return -1;
 }
