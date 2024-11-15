@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <string.h>
 
 #include "stdes.h"
 
@@ -31,12 +32,15 @@ FICHIER *ouvrir(const char *nom, char mode){
     }
 
     FICHIER* fichier = (FICHIER*)(malloc(sizeof(FICHIER)));
-    void * buffer = malloc(sizeof(char *) * BUFFER_SIZE);
-    fichier->buffer=buffer;
+    void * buffer_ecriture = malloc(sizeof(char *) * BUFFER_SIZE);
+    void * buffer_lecture = malloc(sizeof(char *) * BUFFER_SIZE);
+    fichier->buffer_lecture=buffer_lecture;
+    fichier->buffer_ecriture=buffer_ecriture;
     fichier->buffer_size=BUFFER_SIZE;
     fichier->mode=mode;
     fichier->fd=fd;
-    fichier->curseur=0;
+    fichier->curseur_lecture=0;
+    fichier->curseur_ecriture=0;
     fichier->available_read=0; // buffer vide au début, donc rien ne peut être lu
 
     return fichier;
@@ -54,7 +58,7 @@ int fermer(FICHIER*f){
         return -1;
     }
 
-    // flush ici: le buffer peut ne pas être vide
+    vider(f);// flush ici: le buffer peut ne pas être vide
 
     int c=close(f->fd);
     if(c<0){
@@ -62,7 +66,8 @@ int fermer(FICHIER*f){
         return -2;
     }
 
-    free(f->buffer);
+    free(f->buffer_lecture);
+    free(f->buffer_ecriture);
     free(f);
     return 0;
 }
@@ -74,6 +79,8 @@ int fermer(FICHIER*f){
  *              - taille la taille d'un élement
  *              - nbelem le nombre d'éléments à lire
  *              - f un objet de type FICHIER
+ * /!\ il est de la responsabilité de l'utilisateur de s'assurer que la taille de p est suffisante pour 
+ * contenir l'ensemle des élèments à lire.
  *  Valeur de retour: TODO
 */
 int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
@@ -86,38 +93,93 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
     if(f->mode!='L'){
         return -3;
     }
-    if((f->curseur)=0){
-        int lu=read(f->fd, f->buffer, BUFFER_SIZE);
-        p[lu]=f->buffer[taille];
+    size_t curseur_p=0;
+    int nb_elem_lu=0;
+    int nb_elem_buffer=(f->available_read-f->curseur_lecture)/taille;
+    if(nb_elem_buffer>nbelem){
+        nb_elem_buffer=nbelem;
     }
-    int reste = nbelem * taille;
-    int total_lecture=0;
-    
-    // TODO: refaire: l'objectif est d'appeler read() uniquement en cas de besoin
+    memcpy((char *)p+curseur_p, f->buffer_lecture+f->curseur_lecture, nb_elem_buffer*taille);
+    curseur_p+=nb_elem_buffer*taille;
+    f->curseur_lecture+=nb_elem_buffer*taille;
+    nb_elem_lu+=nb_elem_buffer;
+    if(nb_elem_lu==nbelem){
+        return nb_elem_buffer;
+    }
+    int octet_restant_buffer_lecture=f->available_read-f->curseur_lecture;
+    memcpy((char *)p+curseur_p, f->buffer_lecture+f->curseur_lecture, octet_restant_buffer_lecture);
+    curseur_p+=octet_restant_buffer_lecture;
+    f->curseur_lecture+=octet_restant_buffer_lecture;
+    int octet_restant_a_lire=(nbelem-nb_elem_lu)*taille-octet_restant_buffer_lecture;
+    if(octet_restant_a_lire>f->buffer_size){
+        int n=read(f->fd, (char *) p+curseur_p, octet_restant_a_lire);
+        if(n==-1){
+            //TODO
+        }
+        else{
+            if((n+octet_restant_a_lire)%taille!=0){
+                int octet_restant_elem_complet=taille-((n+octet_restant_a_lire)%taille);
+                char vide [octet_restant_elem_complet];
+                for(int i=0; i<octet_restant_elem_complet; i++){
+                    vide[i]='\0';
+                }
+                memcpy((char *)p+curseur_p, vide, octet_restant_elem_complet);
+                n+=octet_restant_elem_complet;
+            }
+            nb_elem_lu+=(n+octet_restant_buffer_lecture)/taille;
+        }
+        return nb_elem_lu;
+    }
 
-    while(reste){
-        //remplir le buffer
-        if(reste>BUFFER_SIZE){ //cas où le buffer est entièrement rempli
-            int lu = read(f->fd, f->buffer, BUFFER_SIZE);
-            total_lecture+=lu;
-            reste-=lu;
-            p[total_lecture+taille]=f->buffer[(f->curseur)-taille];
-            f->curseur=0;
+    int n=read(f->fd, f->buffer_lecture, f->buffer_size);
+    f->available_read=n;
+    f->curseur_lecture=0;
+    if(octet_restant_a_lire>f->available_read){
+        octet_restant_a_lire=f->available_read;
+    }
+    memcpy((char *)p+curseur_p, f->buffer_lecture+f->curseur_lecture, octet_restant_a_lire);
+    curseur_p+=octet_restant_a_lire;
+    f->curseur_lecture+=octet_restant_a_lire;
+    // if((nbelem*taille)-octet_restant_a_lire>0){
+    //     if(octet_restant_a_lire>f->buffer_size){
+    //         int n=read(f->fd, (char *) p+curseur_p, octet_restant_a_lire);
+    //         if(n==-1){
+    //             //TODO
+    //         }
+    //         else{
+    //             if((n+octet_restant_a_lire)%taille!=0){
+    //                 int octet_restant_elem_complet=taille-((n+octet_restant_a_lire)%taille);
+    //                 char vide [octet_restant_elem_complet];
+    //                 for(int i=0; i<octet_restant_elem_complet; i++){
+    //                     vide[i]='\0';
+    //                 }
+    //                 memcpy((char *)p+curseur_p, vide, octet_restant_elem_complet);
+    //                 n+=octet_restant_elem_complet;
+    //             }
+    //             nb_elem_lu+=(n+octet_restant_a_lire)/taille;
+    //         }
+    //         return nb_elem_lu;
+    //     }else{
+    //         memcpy((char *)p+curseur_p, f->buffer_lecture+f->curseur_lecture, octet_restant_a_lire);
+    //         curseur_p+=octet_restant_a_lire;
+    //         f->curseur_lecture+=octet_restant_a_lire;
+    //         octet_restant_a_lire=0;
+    //     }
+    // }
+    if((n+octet_restant_a_lire)%taille!=0){
+        int octet_restant_elem_complet=taille-((n+octet_restant_a_lire)%taille);
+        char vide [octet_restant_elem_complet];
+        for(int i=0; i<octet_restant_elem_complet; i++){
+            vide[i]='\0';
         }
-        else{//cas où le buffer n'est pas entièrement rempli
-            int lu = read(f->fd, f->buffer, reste);
-            total_lecture+=lu;
-            reste-=lu;
-            p[total_lecture+taille]=f->buffer[(f->curseur)-taille];
-        }
-        if(!lu||lu<0){
-            return -4;
-        }
+        memcpy((char *)p+curseur_p, vide, octet_restant_elem_complet);
+        n+=octet_restant_elem_complet;
 
     }
-    
-    return total_lecture/taille;
+    nb_elem_lu+=(octet_restant_buffer_lecture+octet_restant_a_lire)/taille;
+    return nb_elem_lu;
 }
+                
 
 
 /**
@@ -132,36 +194,68 @@ int ecrire(const void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
     if(f==NULL){
         return -1;
     }
-    if(f->fd==NULL){
+    if(f->fd==-1){
         return -2;
     }
     if(f->mode!='E'){
         return -3;
     }
-    int reste = nbelem * taille;
-    int total_ecriture=0;
-    while(reste){
-        //remplir le buffer
-        if(reste>BUFFER_SIZE){ //cas où le buffer est entièrement rempli
-            int ecrit = write(f->fd, f->buffer, BUFFER_SIZE);
-            total_lecture+=ecrit;
-            reste-=ecrit;
-            p[total_ecriture+taille]=f->buffer[(f->curseur)-taille];
-            f->curseur=0;
-        }
-        else{//cas où le buffer n'est pas entièrement rempli
-            int ecrit = write(f->fd, f->buffer, reste);
-            total_ecriture+=ecrit;
-            reste-=ecrit;
-            p[total_ecriture+taille]=f->buffer[(f->curseur)-taille];
-        }
-        if(!ecrit||ecrit<0){
-            return -4;
-        }
 
+    if(taille*nbelem>f->buffer_size){
+        if(f->curseur_ecriture>0){
+            vider(f);
+        }
+        int n=write(f->fd, p, taille*nbelem);
+        if(n%taille!=0){
+            int octet_restant_elem_complet=taille-(n%taille);
+                char vide [octet_restant_elem_complet];
+                for(int i=0; i<octet_restant_elem_complet; i++){
+                    vide[i]='\0';
+                }
+                write(f->fd, vide, octet_restant_elem_complet);
+                n+=octet_restant_elem_complet;
+        }
+        return n/taille;
     }
-    return total_ecriture/taille;
+    int nb_elem_buffer=(f->buffer_size-f->curseur_ecriture)/taille;
+    if(nb_elem_buffer>=nbelem){
+        memcpy(f->buffer_ecriture+f->curseur_ecriture, p, nbelem*taille);
+        f->curseur_ecriture+=nbelem*taille;
+        return nbelem;
+    }
+    memcpy(f->buffer_ecriture+f->curseur_ecriture, p, nb_elem_buffer*taille);
+    f->curseur_ecriture+=nb_elem_buffer*taille;
+    vider(f);
+    int reste_a_ecrire=nbelem-nb_elem_buffer;
+    memcpy(f->buffer_ecriture+f->curseur_ecriture, p, reste_a_ecrire*taille);
+    f->curseur_ecriture+=reste_a_ecrire*taille;
+    return nbelem;
 }
+
+// //     int reste = nbelem * taille;
+// //     int total_ecriture=0;
+// //     while(reste){
+// //         //remplir le buffer
+// //         if(reste>BUFFER_SIZE){ //cas où le buffer est entièrement rempli
+// //             int ecrit = write(f->fd, f->buffer, BUFFER_SIZE);
+// //             total_lecture+=ecrit;
+// //             reste-=ecrit;
+// //             p[total_ecriture+taille]=f->buffer[(f->curseur)-taille];
+// //             f->curseur=0;
+// //         }
+// //         else{//cas où le buffer n'est pas entièrement rempli
+// //             int ecrit = write(f->fd, f->buffer, reste);
+// //             total_ecriture+=ecrit;
+// //             reste-=ecrit;
+// //             p[total_ecriture+taille]=f->buffer[(f->curseur)-taille];
+// //         }
+// //         if(!ecrit||ecrit<0){
+// //             return -4;
+// //         }
+
+// //     }
+// //     return total_ecriture/taille;
+//  }
 
 
 /**
@@ -171,10 +265,11 @@ int ecrire(const void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
  */
 int vider(FICHIER *f){
     if(f->mode == 'E'){
-        write(f->fd, f->buffer, f->curseur);
-        f->curseur=0;
+        write(f->fd, f->buffer_ecriture, f->curseur_ecriture);
+        f->curseur_ecriture=0;
         return 0;
     }
 
     return -1;
 }
+

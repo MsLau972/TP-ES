@@ -4,11 +4,13 @@
 #define BUFFER_SIZE 1000
 
 struct _ES_FICHIER{
-    void * buffer;
+    void * buffer_ecriture;
+    void * buffer_lecture;
     size_t buffer_size;
     char mode;
     int fd;
-    size_t curseur;
+    size_t curseur_ecriture;
+    size_t curseur_lecture;
     size_t available_read;  // données disponibles en lecture dans le buffer
 };
 typedef struct _ES_FICHIER FICHIER;

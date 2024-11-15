@@ -13,7 +13,7 @@ SRCS=stdes.c $(NOS_TESTS)/*.c ./eval-libc.c
 OBJS=$(SRCS:./%.c=$(OBJDIR)/%.o)
 INCLUDES=-I./
 
-EXEC= $(BINDIR)/eval-libc $(BINDIR)/testsperso_OuvrirFermer
+EXEC= $(BINDIR)/eval-libc $(BINDIR)/testsperso_OuvrirFermer  $(BINDIR)/testsperso_read  $(BINDIR)/testsperso_write $(BINDIR)/testsperso_LireEcrire
 
 all: $(EXEC)
 
@@ -25,8 +25,18 @@ $(OBJDIR)/stdes.o: stdes.c stdes.h
 $(OBJDIR)/eval-libc.o: ./eval-libc.c
 	$(CC) $(INCLUDES) $(CFLAGS) -c -o $@ $< 
 
-$(OBJDIR)/testsperso_OuvrirFermer.o: $(NOS_TESTS)/testsperso_OuvrirFermer.c
+$(OBJDIR)/testsperso_OuvrirFermer.o: $(NOS_TESTS)/testsperso_OuvrirFermer.c 
 	$(CC) $(INCLUDES) $(CFLAGS) -c -o $@ $< 
+
+$(OBJDIR)/testsperso_read.o: $(NOS_TESTS)/testsperso_read.c 
+	$(CC) $(INCLUDES) $(CFLAGS) -c -o $@ $< 
+
+$(OBJDIR)/testsperso_write.o: $(NOS_TESTS)/testsperso_write.c 
+	$(CC) $(INCLUDES) $(CFLAGS) -c -o $@ $< 
+
+$(OBJDIR)/testsperso_LireEcrire.o: $(NOS_TESTS)/testsperso_LireEcrire.c 
+	$(CC) $(INCLUDES) $(CFLAGS) -c -o $@ $< 
+
 
 ### Regles pour construction des executables ###
 
@@ -35,6 +45,15 @@ $(BINDIR)/eval-libc: $(OBJDIR)/stdes.o $(OBJDIR)/eval-libc.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 $(BINDIR)/testsperso_OuvrirFermer: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_OuvrirFermer.o 
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(BINDIR)/testsperso_read: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_read.o 
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(BINDIR)/testsperso_write: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_write.o 
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(BINDIR)/testsperso_LireEcrire: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_LireEcrire.o 
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
