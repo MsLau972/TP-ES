@@ -183,7 +183,7 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
 
             // MARCHE PAS.. (cf testsperso_read2)
             // printf("%c\n", ((char *)p)[curseur_p + n]);
-            // ((char *)p)[curseur_p + n] = '\0';
+            ((char *)p)[n+octet_restant_buffer_lecture] = '\0';
             // printf("len = %ld\n", strlen((char *)p));
 
             nb_elem_lu+=(n+octet_restant_buffer_lecture)/taille;
@@ -250,61 +250,64 @@ int ecrire(const void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
         return -3;
     }
 
-    if(taille*nbelem>f->buffer_size){
+    int bytes_to_read = taille * nbelem;
+
+    // Si la taille de ce qu'il faut lire est plus grande que le buffer
+    if(bytes_to_read>f->buffer_size){
+        // flush s'il y a des données dans le buffer
         if(f->curseur_ecriture>0){
             vider(f);
         }
-        int n=write(f->fd, p, taille*nbelem);
+
+        // on bypass
+        int n=write(f->fd, p, bytes_to_read);
+        if(n == -1){
+            fprintf(stderr, "Erreur: L'écriture dans le fichier a échoué\n");
+            return 0;
+        }
+
+        // ce qui a été écrit n'est pas multiple de taille
         if(n%taille!=0){
             int octet_restant_elem_complet=taille-(n%taille);
-                char vide [octet_restant_elem_complet];
-                for(int i=0; i<octet_restant_elem_complet; i++){
-                    vide[i]='\0';
-                }
-                write(f->fd, vide, octet_restant_elem_complet);
-                n+=octet_restant_elem_complet;
+
+            char vide[octet_restant_elem_complet];
+            for(int i=0; i<octet_restant_elem_complet; i++){
+                vide[i]='\0';
+            }
+
+            write(f->fd, vide, octet_restant_elem_complet);
+            n+=octet_restant_elem_complet;
         }
+
         return n/taille;
     }
-    int nb_elem_buffer=(f->buffer_size-f->curseur_ecriture)/taille;
-    if(nb_elem_buffer>=nbelem){
-        memcpy(f->buffer_ecriture+f->curseur_ecriture, p, nbelem*taille);
-        f->curseur_ecriture+=nbelem*taille;
+
+    // pas de bypass
+
+    // on regarde combien d'éléments au maximum on peut mettre dans le buffer
+    int nb_elem_max_in_buffer=(f->buffer_size-f->curseur_ecriture)/taille;
+
+    // Il y a suffisamment de place pour tout contenir
+    if(nb_elem_max_in_buffer>=nbelem){
+        memcpy(f->buffer_ecriture+f->curseur_ecriture, p, bytes_to_read);
+        f->curseur_ecriture+=bytes_to_read;
         return nbelem;
     }
-    memcpy(f->buffer_ecriture+f->curseur_ecriture, p, nb_elem_buffer*taille);
-    f->curseur_ecriture+=nb_elem_buffer*taille;
+
+    // Il n'y a pas assez de place pour tout contenir
+
+    // On met dans le buffer ce qu'on peut
+    memcpy(f->buffer_ecriture+f->curseur_ecriture, p, nb_elem_max_in_buffer*taille);
+    f->curseur_ecriture+=nb_elem_max_in_buffer*taille;
+
     vider(f);
-    int reste_a_ecrire=nbelem-nb_elem_buffer;
-    memcpy(f->buffer_ecriture+f->curseur_ecriture, p, reste_a_ecrire*taille);
-    f->curseur_ecriture+=reste_a_ecrire*taille;
+
+    int nb_elem_to_read=nbelem-nb_elem_max_in_buffer;
+    memcpy(f->buffer_ecriture+f->curseur_ecriture, p, nb_elem_to_read*taille);
+    f->curseur_ecriture+=nb_elem_to_read*taille;
+
     return nbelem;
 }
-
-// //     int reste = nbelem * taille;
-// //     int total_ecriture=0;
-// //     while(reste){
-// //         //remplir le buffer
-// //         if(reste>BUFFER_SIZE){ //cas où le buffer est entièrement rempli
-// //             int ecrit = write(f->fd, f->buffer, BUFFER_SIZE);
-// //             total_lecture+=ecrit;
-// //             reste-=ecrit;
-// //             p[total_ecriture+taille]=f->buffer[(f->curseur)-taille];
-// //             f->curseur=0;
-// //         }
-// //         else{//cas où le buffer n'est pas entièrement rempli
-// //             int ecrit = write(f->fd, f->buffer, reste);
-// //             total_ecriture+=ecrit;
-// //             reste-=ecrit;
-// //             p[total_ecriture+taille]=f->buffer[(f->curseur)-taille];
-// //         }
-// //         if(!ecrit||ecrit<0){
-// //             return -4;
-// //         }
-
-// //     }
-// //     return total_ecriture/taille;
-//  }
 
 
 /**

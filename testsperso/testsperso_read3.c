@@ -18,13 +18,14 @@ int main(){
 
     int ret13 = lire(chaine13, 13, 1, f13);
     assert(ret13 == 1);
+    assert(strlen(chaine13) == 13);
     printf("%s\n", chaine13);
-    printf("%ld\n", strlen(chaine13));
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");
     fermer(f13);
 
 
+    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
     printf("=============== Lecture de 1 élément de 14 octets ===============\n");
     FICHIER * f14 =ouvrir("fichiersTexte/texte_court.txt", 'L');  
     f14->buffer_size=8;
@@ -32,14 +33,15 @@ int main(){
     
     int ret14 = lire(chaine14, 14, 1, f14);
     assert(ret14 == 1);
+    assert(strlen(chaine14) == 13);     // le fichier a 13 caractères, il ne devrait pas y en avoir plus
     printf("%s\n", chaine14);
-    printf("%ld\n", strlen(chaine14));
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");
 
     fermer(f14);
 
 
+    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
     printf("=============== Lecture de 1 élément de 7 octets ===============\n");
     FICHIER * f7_1 =ouvrir("fichiersTexte/texte_court.txt", 'L');  
     f7_1->buffer_size=8;
@@ -47,8 +49,8 @@ int main(){
     
     int ret7_1 = lire(chaine7_1, 7, 1, f7_1);
     assert(ret7_1 == 1);
+    assert(strlen(chaine7_1) == 7);     // on peut lire 7 octets, tout est OK
     printf("%s\n", chaine7_1);
-    printf("%ld\n", strlen(chaine7_1));
     printf("OK\n");
 
     printf("=============== Lecture de 1 élément de 7 octets ===============\n");
@@ -57,23 +59,24 @@ int main(){
 
     int ret7_2 = lire(chaine7_2, 7, 1, f7_1);
     assert(ret7_2 == 1);
+    assert(strlen(chaine7_2) == 6);     // il n'y a plus que 6 octets à lire
     printf("%s\n", chaine7_2);
-    printf("%ld\n", strlen(chaine7_2));
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");
 
     fermer(f7_1);
 
 
+    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
     printf("=============== Lecture de 1 élément de 13 octets ===============\n");
     FICHIER * f_entier =ouvrir("fichiersTexte/texte_court.txt", 'L');  
     f_entier->buffer_size=8;
-    char chaine_entier[7];
+    char chaine_entier[13];
     
     int ret_entier = lire(chaine_entier, 13, 1, f_entier);
     assert(ret_entier == 1);
+    assert(strlen(chaine_entier) == 13);
     printf("%s\n", chaine_entier);
-    printf("%ld\n", strlen(chaine_entier));
     printf("OK\n");
 
     printf("=============== Lecture de 1 élément de 3 octets ===============\n");
@@ -82,14 +85,15 @@ int main(){
 
     int ret3 = lire(chaine3, 3, 1, f_entier);
     assert(ret3 == 0);
+    assert(strlen(chaine3) == 0);
     printf("%s\n", chaine3);
-    printf("%ld\n", strlen(chaine3));
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");
 
     fermer(f_entier);
 
 
+    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
     printf("=============== Lecture de 1 élément de 12 octets ===============\n");
     FICHIER * f1_12 =ouvrir("fichiersTexte/texte_court.txt", 'L');  
     f1_12->buffer_size=30;
@@ -97,34 +101,35 @@ int main(){
     
     int ret1_12 = lire(chaine1_12, 12, 1, f1_12);
     assert(ret1_12 == 1);
+    assert(strlen(chaine1_12) == 12);
     printf("%s\n", chaine1_12);
-    printf("%ld\n", strlen(chaine1_12));
     printf("OK\n");
 
     printf("=============== Lecture de 1 élément de 3 octets ===============\n");
-    // (on veut lire un élément mais il n'y a plus rien à lire dans le fichier)
+    // (on veut lire un élément mais il n'y a plus rien à lire dans le fichier (mais il reste quelques octets dans le buffer))
     char chaine1_3[3];
 
     int ret1_3 = lire(chaine1_3, 3, 1, f1_12);
     assert(ret1_3 == 1);
+    assert(strlen(chaine1_3) == 1);
     printf("%s\n", chaine1_3);
-    printf("%ld\n", strlen(chaine1_3));
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");
 
     fermer(f1_12);
 
 
+    printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
     printf("=============== Lecture de 2 élément de 10 octets ===============\n");
-    // (plus que le buffer mais ce qu'on lit au total n'est pas multiple de 10)
+    // (plus que le buffer mais ce qu'on lit au total (13) n'est pas multiple de 10)
     FICHIER * f2_10 =ouvrir("fichiersTexte/texte_court.txt", 'L');  
     f2_10->buffer_size = 9;
     char chaine2_10[20];
     
     int ret2_10 = lire(chaine2_10, 10, 2, f2_10);
     assert(ret2_10 == 2);
+    assert(strlen(chaine2_10) == 13);
     printf("%s\n", chaine2_10);
-    printf("%ld\n", strlen(chaine2_10));
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");
 

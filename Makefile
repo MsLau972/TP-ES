@@ -18,7 +18,8 @@ EXEC= $(BINDIR)/eval-libc \
 	$(BINDIR)/testsperso_read1 \
 	$(BINDIR)/testsperso_read2 \
 	$(BINDIR)/testsperso_read3 \
-	$(BINDIR)/testsperso_write \
+	$(BINDIR)/testsperso_write1 \
+	$(BINDIR)/testsperso_write2 \
 	$(BINDIR)/testsperso_LireEcrire \
 	# $(BINDIR)/test \
 	# $(BINDIR)/test_format \
@@ -46,8 +47,8 @@ $(OBJDIR)/%.o: $(NOS_TESTS)/%.c
 $(BINDIR)/eval-libc: $(OBJDIR)/stdes.o $(OBJDIR)/eval-libc.o 
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(BINDIR)/test: $(OBJDIR)/stdes.o $(OBJDIR)/test.o 
-	$(CC) $(CFLAGS) -o $@ $^
+# $(BINDIR)/test: $(OBJDIR)/stdes.o $(OBJDIR)/test.o 
+# 	$(CC) $(CFLAGS) -o $@ $^
 
 # $(BINDIR)/test-rand: $(OBJDIR)/stdes.o $(OBJDIR)/test-rand.o 
 # 	$(CC) $(CFLAGS) -o $@ $^
@@ -68,7 +69,10 @@ $(BINDIR)/testsperso_read2: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_read2.o
 $(BINDIR)/testsperso_read3: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_read3.o 
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(BINDIR)/testsperso_write: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_write.o 
+$(BINDIR)/testsperso_write1: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_write1.o 
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(BINDIR)/testsperso_write2: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_write2.o 
 	$(CC) $(CFLAGS) -o $@ $^
 
 $(BINDIR)/testsperso_LireEcrire: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_LireEcrire.o 
