@@ -1,6 +1,8 @@
 #ifndef _STDES_H
 #define _STDES_H
 #include <stdint.h>
+#include <unistd.h>
+
 #define BUFFER_SIZE 1000
 
 struct _ES_FICHIER{
