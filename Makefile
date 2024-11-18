@@ -75,4 +75,4 @@ $(BINDIR)/testsperso_LireEcrire: $(OBJDIR)/stdes.o $(OBJDIR)/testsperso_LireEcri
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -f *.o $(OBJDIR)/*.o $(EXEC) test_read_file
+	rm -f *.o $(OBJDIR)/*.o $(EXEC)
