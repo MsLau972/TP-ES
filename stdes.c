@@ -124,17 +124,15 @@ int fill_gap(void* p, size_t curseur_p, int size_elem, int bytes_to_read, int by
  *              - f un objet de type FICHIER
  * /!\ il est de la responsabilité de l'utilisateur de s'assurer que la taille de p est suffisante pour 
  * contenir l'ensemble des éléments à lire.
- *  Valeur de retour: TODO
+ *  Valeur de retour: Retourne le nombre d'éléments lus, -1 si le fichier n'existe pas et -2 si le fichier n'est
+ *                    pas ouvert en lecture
 */
 int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
-    if(f==NULL){
+    if(f==NULL || f->fd < 0){
         return -1;
     }
-    if(f->fd < 0){
-        return -2;
-    }
     if(f->mode!='L'){
-        return -3;
+        return -2;
     }
     size_t curseur_p=0;
     int nb_elem_lu=0;
@@ -151,6 +149,7 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
 
     // on a lu tout ce qu'on voulait lire, donc on retourne
     if(nb_elem_lu==nbelem){
+        ((char *)p)[nb_elem_lu * taille] = '\0';
         return nb_elem_lu;
     }
 
@@ -237,17 +236,16 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
  *              - taille la taille d'un élement
  *              - nbelem le nombre d'éléments à lire
  *              - f un objet de type FICHIER
- *  Valeur de retour: TODO
+ *  /!\ L'utilisateur a la responsabilité de s'assurer que p contient au moins taille * nbelem éléments
+ *  Valeur de retour: Retourne le nombre d'éléments qui ont été écrits, -1 si le fichier n'existe pas et -2 si le fichier
+ *                    n'est pas ouvert en écriture
 */
 int ecrire(const void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
-    if(f==NULL){
+    if(f==NULL || f->fd == -1){
         return -1;
     }
-    if(f->fd==-1){
-        return -2;
-    }
     if(f->mode!='E'){
-        return -3;
+        return -2;
     }
 
     int bytes_to_read = taille * nbelem;
