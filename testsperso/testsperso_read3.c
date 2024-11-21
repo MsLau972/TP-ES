@@ -18,7 +18,6 @@ int main(){
 
     int ret13 = lire(chaine13, 13, 1, f13);
     assert(ret13 == 1);
-    assert(strlen(chaine13) == 13);
     printf("%s\n", chaine13);
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");
@@ -29,11 +28,11 @@ int main(){
     printf("=============== Lecture de 1 élément de 14 octets ===============\n");
     FICHIER * f14 =ouvrir("fichiersTexte/texte_court.txt", 'L');  
     f14->buffer_size=8;
-    char chaine14[14];
-    
+    char chaine14[14] = {0};
+    // printf("%p\n", &chaine14[0]);
+
     int ret14 = lire(chaine14, 14, 1, f14);
-    assert(ret14 == 1);
-    assert(strlen(chaine14) == 13);     // le fichier a 13 caractères, il ne devrait pas y en avoir plus
+    assert(ret14 == 0);
     printf("%s\n", chaine14);
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");
@@ -43,23 +42,25 @@ int main(){
 
     printf("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n");
     printf("=============== Lecture de 1 élément de 7 octets ===============\n");
+    // même problème ici que dans testsperso_read2
     FICHIER * f7_1 =ouvrir("fichiersTexte/texte_court.txt", 'L');  
     f7_1->buffer_size=8;
     char chaine7_1[7];
+    // printf("%p\n", &chaine7_1[7]);       // on a &chaine7_1[7] == &chaine14[0] ... Et ce avant même l'appel à lire()
     
     int ret7_1 = lire(chaine7_1, 7, 1, f7_1);
     assert(ret7_1 == 1);
-    assert(strlen(chaine7_1) == 7);     // on peut lire 7 octets, tout est OK
     printf("%s\n", chaine7_1);
     printf("OK\n");
 
     printf("=============== Lecture de 1 élément de 7 octets ===============\n");
-    // (cas où il n'y a pas assez pour faire un élément entier)
+    // (il n'y a pas assez pour faire un élément entier)
     char chaine7_2[7];
+    // printf("%p\n", &chaine7_2[0]);
 
     int ret7_2 = lire(chaine7_2, 7, 1, f7_1);
-    assert(ret7_2 == 1);
-    assert(strlen(chaine7_2) == 6);     // il n'y a plus que 6 octets à lire
+    assert(ret7_2 == 0);
+    assert(strlen(chaine7_2) > 0);
     printf("%s\n", chaine7_2);
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");
@@ -71,11 +72,11 @@ int main(){
     printf("=============== Lecture de 1 élément de 13 octets ===============\n");
     FICHIER * f_entier =ouvrir("fichiersTexte/texte_court.txt", 'L');  
     f_entier->buffer_size=8;
-    char chaine_entier[13];
+    char chaine_entier[13];     
+    // printf("%p\n", &chaine_entier[13]);      // on a &chaine_entier[13] == &chaine7_2[0]
     
     int ret_entier = lire(chaine_entier, 13, 1, f_entier);
     assert(ret_entier == 1);
-    assert(strlen(chaine_entier) == 13);
     printf("%s\n", chaine_entier);
     printf("OK\n");
 
@@ -101,7 +102,7 @@ int main(){
     
     int ret1_12 = lire(chaine1_12, 12, 1, f1_12);
     assert(ret1_12 == 1);
-    assert(strlen(chaine1_12) == 12);
+    assert(strlen(chaine1_12) > 0);
     printf("%s\n", chaine1_12);
     printf("OK\n");
 
@@ -110,8 +111,8 @@ int main(){
     char chaine1_3[3];
 
     int ret1_3 = lire(chaine1_3, 3, 1, f1_12);
-    assert(ret1_3 == 1);
-    assert(strlen(chaine1_3) == 1);
+    assert(ret1_3 == 0);
+    assert(strlen(chaine1_3) > 0);
     printf("%s\n", chaine1_3);
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");
@@ -127,8 +128,8 @@ int main(){
     char chaine2_10[20];
     
     int ret2_10 = lire(chaine2_10, 10, 2, f2_10);
-    assert(ret2_10 == 2);
-    assert(strlen(chaine2_10) == 13);
+    assert(ret2_10 == 1);
+    assert(strlen(chaine2_10) > 0);
     printf("%s\n", chaine2_10);
     printf("OK\n");
     printf("Fermeture du fichier...\n\n");

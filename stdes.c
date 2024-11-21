@@ -34,10 +34,8 @@ FICHIER *ouvrir(const char *nom, char mode){
     }
 
     FICHIER* fichier = (FICHIER*)(malloc(sizeof(FICHIER)));
-    void * buffer_ecriture = malloc(sizeof(char *) * BUFFER_SIZE);
-    void * buffer_lecture = malloc(sizeof(char *) * BUFFER_SIZE);
-    fichier->buffer_lecture=buffer_lecture;
-    fichier->buffer_ecriture=buffer_ecriture;
+    fichier->buffer_lecture=malloc(sizeof(char) * BUFFER_SIZE);;
+    fichier->buffer_ecriture=malloc(sizeof(char) * BUFFER_SIZE);;
     fichier->buffer_size=BUFFER_SIZE;
     fichier->mode=mode;
     fichier->fd=fd;
@@ -94,29 +92,6 @@ void copy_to_usr_buf(void *p, size_t *curseur_p, int size_to_copy, FICHIER *f){
 
 
 /**
- *  fill_gap - remplit le buffer p d'autant de caractère '\0' que nécessaire et retourne le nombre
- *            d'octets qu'il faut pour qu'un élément soit complet
- *  Paramères: - p le buffer utilisateur
- *             - curseur_p l'endroit dans le buffer où il faut ajouter des données
- *             - size_elem  la taille d'un élément complet
- *             - bytes_to_read le nombre d'octets qu'il reste à lire après lecture de tout le buffer
- *             - bytes_read le nombre d'octets qu'on a lu et qui restaient dans le buffer
- *  Valeur de retour: Retourne le nombre d'octets qu'il faut pour avoir un élément complet
-*/
-int fill_gap(void* p, size_t curseur_p, int size_elem, int bytes_to_read, int bytes_read){
-    int octet_restant_elem_complet=size_elem-((bytes_to_read+bytes_read)%size_elem);
-
-    char vide[octet_restant_elem_complet];
-    for(int i=0; i<octet_restant_elem_complet; i++){
-        vide[i]='\0';
-    }
-
-    memcpy((char *)p + curseur_p, vide, octet_restant_elem_complet);
-    return octet_restant_elem_complet;
-}
-
-
-/**
  *  lire - lit des éléments depuis le fichier pointé par f et les stocke dans le buffer utilisateur
  *  Paramètres: - p le buffer utilisateur
  *              - taille la taille d'un élement
@@ -149,7 +124,6 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
 
     // on a lu tout ce qu'on voulait lire, donc on retourne
     if(nb_elem_lu==nbelem){
-        ((char *)p)[nb_elem_lu * taille] = '\0';
         return nb_elem_lu;
     }
 
@@ -171,20 +145,6 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
             fprintf(stderr, "Erreur: la lecture depuis le fichier a échoué\n");
         }
         else{
-            // la taille des données restantes du buffer rajoutées à ce qu'on a lu directement depuis le 
-            // fichier n'est pas multiple de taille
-            if((n+octet_restant_buffer_lecture)%taille!=0){
-                int octet_restant_elem_complet = fill_gap(p, n, taille, n, octet_restant_buffer_lecture);
-                n+=octet_restant_elem_complet;
-            }
-            f->curseur_lecture = 0;
-            f->available_read = 0;
-
-            // MARCHE PAS.. (cf testsperso_read2)
-            // printf("%c\n", ((char *)p)[curseur_p + n]);
-            ((char *)p)[n+octet_restant_buffer_lecture] = '\0';
-            // printf("len = %ld\n", strlen((char *)p));
-
             nb_elem_lu+=(n+octet_restant_buffer_lecture)/taille;
         }
 
@@ -197,13 +157,8 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
     // on a lu toutes les données du buffer, il faut donc le re-remplir
     int n=read(f->fd, f->buffer_lecture, f->buffer_size);
     if(n == -1){
-        // la taille des données restantes du buffer n'est pas mutliple de taille
-        if(octet_restant_buffer_lecture%taille!=0){
-            int octet_restant_elem_complet = fill_gap(p, curseur_p, taille, 0, octet_restant_buffer_lecture);
-            octet_restant_buffer_lecture+=octet_restant_elem_complet;
-        }
-
-        return nb_elem_lu + 1;
+        fprintf(stderr, "Erreur; Impossible de lire depuis le fichier\n");
+        return nb_elem_lu;
     }
     f->available_read=n;
     f->curseur_lecture=0;
@@ -214,15 +169,6 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
         octet_restant_a_lire=f->available_read;
     }
     copy_to_usr_buf(p, &curseur_p, octet_restant_a_lire, f);
-
-    // la taille des données restantes du buffer rajoutées à ce qu'on a lu après remplissage 
-    // du buffer n'est pas mutliple de taille
-    if((octet_restant_a_lire+octet_restant_buffer_lecture)%taille!=0){
-        int octet_restant_elem_complet = fill_gap(p, curseur_p, taille, octet_restant_a_lire, octet_restant_buffer_lecture);
-        octet_restant_a_lire+=octet_restant_elem_complet;
-    }
-
-    ((char *)p)[octet_restant_a_lire+octet_restant_buffer_lecture] = '\0';
     nb_elem_lu+=(octet_restant_buffer_lecture+octet_restant_a_lire)/taille;
     
     return nb_elem_lu;
