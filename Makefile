@@ -24,7 +24,7 @@ EXEC= $(BINDIR)/eval-libc \
 	$(BINDIR)/testsperso_LireEcrire \
 	$(BINDIR)/testsperso_read_write \
 	$(BINDIR)/hello_world \
-	# $(BINDIR)/test \
+	$(BINDIR)/test \
 	# $(BINDIR)/test_format \
 	# $(BINDIR)/test-rand \
 
@@ -56,8 +56,8 @@ $(BINDIR)/eval-libc: $(OBJDIR)/stdes.o $(OBJDIR)/eval-libc.o
 $(BINDIR)/hello_world: $(OBJDIR)/hello_world.o 
 	$(CC) $(CFLAGS) -o $@ $^
 
-# $(BINDIR)/test: $(OBJDIR)/stdes.o $(OBJDIR)/test.o 
-# 	$(CC) $(CFLAGS) -o $@ $^
+$(BINDIR)/test: $(OBJDIR)/stdes.o $(OBJDIR)/test.o 
+	$(CC) $(CFLAGS) -o $@ $^
 
 # $(BINDIR)/test-rand: $(OBJDIR)/stdes.o $(OBJDIR)/test-rand.o 
 # 	$(CC) $(CFLAGS) -o $@ $^

@@ -10,6 +10,47 @@
 
 #include "stdes.h"
 
+FICHIER * my_stdout = NULL;
+FICHIER * my_stderr = NULL;
+
+void before_main() __attribute__((constructor));
+void after_main() __attribute__((destructor));
+
+/**
+ *  before_main - appelée avant une fonction main(), elle initialise my_stdout et my_stderr
+*/
+void before_main(){
+	my_stdout = (FICHIER *)malloc(sizeof(FICHIER));
+	my_stdout->buffer_lecture = NULL;
+	my_stdout->buffer_ecriture = malloc(sizeof(char) * BUFFER_SIZE);
+	my_stdout->buffer_size = BUFFER_SIZE;
+	my_stdout->mode = 'E';
+	my_stdout->fd = STDOUT_FILENO;
+	my_stdout->curseur_lecture = 0;
+    my_stdout->curseur_ecriture = 0;
+    my_stdout->available_read = 0;
+
+	my_stderr = (FICHIER *)malloc(sizeof(FICHIER));
+    my_stderr->buffer_lecture = NULL; 
+    my_stderr->buffer_ecriture = malloc(sizeof(char) * BUFFER_SIZE);
+    my_stderr->buffer_size = BUFFER_SIZE;
+    my_stderr->mode = 'E'; 
+    my_stderr->fd = STDERR_FILENO;
+    my_stderr->curseur_lecture = 0; 
+    my_stderr->curseur_ecriture = 0;
+    my_stderr->available_read = 0; 
+}
+
+
+/**
+ *  after_main - appelée après une fonction main(), elle ferme my_stdout et my_stderr
+*/
+void after_main(){
+	fermer(my_stderr);
+	fermer(my_stdout);
+}
+
+
 /**
  *  ouvrir - ouvre un fichier dont le nom et le mode d'ouverture sont passés en paramètre
  *  Paramètres: - nom le nom du fichier

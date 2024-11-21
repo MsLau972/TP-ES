@@ -1,5 +1,9 @@
 #include "stdes.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string.h>
 
 int main(int argc, char *argv[])
 {
@@ -7,8 +11,10 @@ int main(int argc, char *argv[])
 	FICHIER *f2;
 	char c;
 
-	if (argc != 3)
+	if (argc != 3){
+		fprintf(stderr, "Usage: ./bin/test <fichier lecture> <fichier écriture>\n");
 		exit(-1);
+	}
 
 	f1 = ouvrir (argv[1], 'L');
 	if (f1 == NULL)
@@ -18,14 +24,20 @@ int main(int argc, char *argv[])
 	if (f2 == NULL)
 		exit (-1);
 
-	while (lire (&c, 1, 1, f1) == 1) {
-          ecrire (&c, 1, 1, stdout);
-          ecrire (&c, 1, 1, f2);
+	char erreur[] = "Erreur: Impossible de lire depuis le fichier f2\n";
+	int ret = lire(&c, 1, 1, f2);
+	if(ret < 0){
+		ecrire(erreur, strlen(erreur), 1, my_stderr);
 	}
-/*        vider (stdout);*/
 
-        fermer (f1);
-        fermer (f2);
+	while (lire (&c, 1, 1, f1) == 1) {
+        ecrire (&c, 1, 1, my_stdout);
+        ecrire (&c, 1, 1, f2);
+	}
+	// vider (my_stdout);
+
+    fermer (f1);
+    fermer (f2);
 
 	return 0;
 }
